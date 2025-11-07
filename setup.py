@@ -46,7 +46,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import torch
+import paddle
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
@@ -109,7 +109,7 @@ class CMakeBuild(build_ext):
     def _build_all_extensions_with_cmake(self):
         # Note that self.debug is True when you invoke setup.py like this:
         # python setup.py build_ext --debug install
-        torch_dir = Path(torch.utils.cmake_prefix_path) / "Torch"
+        # torch_dir = Path(torch.utils.cmake_prefix_path) / "Torch"
         cmake_build_type = os.environ.get("CMAKE_BUILD_TYPE", "Release")
         enable_cuda = os.environ.get("ENABLE_CUDA", "")
         torchcodec_disable_compile_warning_as_error = os.environ.get(
@@ -118,7 +118,8 @@ class CMakeBuild(build_ext):
         python_version = sys.version_info
         cmake_args = [
             f"-DCMAKE_INSTALL_PREFIX={self._install_prefix}",
-            f"-DTorch_DIR={torch_dir}",
+            # f"-DTorch_DIR={torch_dir}",
+            f"-DPADDLE_PATH={paddle.__path__[0]}",
             "-DCMAKE_VERBOSE_MAKEFILE=ON",
             f"-DCMAKE_BUILD_TYPE={cmake_build_type}",
             f"-DPYTHON_VERSION={python_version.major}.{python_version.minor}",

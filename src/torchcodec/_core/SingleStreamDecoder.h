@@ -11,6 +11,7 @@
 #include <memory>
 #include <ostream>
 #include <string_view>
+#include <map>
 
 #include "src/torchcodec/_core/AVIOContextHolder.h"
 #include "src/torchcodec/_core/DeviceInterface.h"

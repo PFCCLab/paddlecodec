@@ -1,23 +1,46 @@
 [**Installation**](#installing-torchcodec) | [**Simple Example**](#using-torchcodec) | [**Detailed Example**](https://pytorch.org/torchcodec/stable/generated_examples/) | [**Documentation**](https://pytorch.org/torchcodec) | [**Contributing**](CONTRIBUTING.md) | [**License**](#license)
 
-# TorchCodec
+# PaddleCodec
+
+> [!NOTE]
+>
+> This repo is a fork of the original torchcodec project, with modifications to enhance compatibility and integration with PaddlePaddle.
+>
+> **Installation**
+>
+> ```bash
+> pip install paddlecodec
+> ```
+>
+> **Usage**
+>
+> ```python
+> import paddle
+> paddle.compat.enable_torch_proxy(scope={"torchcodec"})  # Enable torch proxy before importing torchcodec
+> import torchcodec
+> # use torchcodec
+> ```
+
+The original README.md content is as follows:
+
+---
 
 TorchCodec is a Python library for decoding video and audio data into PyTorch
 tensors, on CPU and CUDA GPU. It also supports audio encoding, and video
-encoding will come soon!  It aims to be fast, easy to use, and well integrated
-into the PyTorch ecosystem.  If you want to use PyTorch to train ML models on
+encoding will come soon! It aims to be fast, easy to use, and well integrated
+into the PyTorch ecosystem. If you want to use PyTorch to train ML models on
 videos and audio, TorchCodec is how you turn these into data.
 
 We achieve these capabilities through:
 
-* Pythonic APIs that mirror Python and PyTorch conventions.
-* Relying on [FFmpeg](https://www.ffmpeg.org/) to do the decoding and encoding.
-  TorchCodec uses the version of FFmpeg you already have installed. FFmpeg is a
-  mature library with broad coverage available on most systems. It is, however,
-  not easy to use. TorchCodec abstracts FFmpeg's complexity to ensure it is used
-  correctly and efficiently.
-* Returning data as PyTorch tensors, ready to be fed into PyTorch transforms
-  or used directly to train models.
+-  Pythonic APIs that mirror Python and PyTorch conventions.
+-  Relying on [FFmpeg](https://www.ffmpeg.org/) to do the decoding and encoding.
+   TorchCodec uses the version of FFmpeg you already have installed. FFmpeg is a
+   mature library with broad coverage available on most systems. It is, however,
+   not easy to use. TorchCodec abstracts FFmpeg's complexity to ensure it is used
+   correctly and efficiently.
+-  Returning data as PyTorch tensors, ready to be fed into PyTorch transforms
+   or used directly to train models.
 
 ## Using TorchCodec
 
@@ -99,6 +122,7 @@ ffmpeg -f lavfi -i \
 ```
 
 ## Installing TorchCodec
+
 ### Installing CPU-only TorchCodec
 
 1. Install the latest stable version of PyTorch following the
@@ -128,18 +152,18 @@ ffmpeg -f lavfi -i \
 The following table indicates the compatibility between versions of
 `torchcodec`, `torch` and Python.
 
-| `torchcodec`       | `torch`            | Python              |
-| ------------------ | ------------------ | ------------------- |
-| `main` / `nightly` | `main` / `nightly` | `>=3.10`, `<=3.13`   |
-| `0.8`              | `2.9`              | `>=3.10`, `<=3.13`   |
-| `0.7`              | `2.8`              | `>=3.9`, `<=3.13`   |
-| `0.6`              | `2.8`              | `>=3.9`, `<=3.13`   |
-| `0.5`              | `2.7`              | `>=3.9`, `<=3.13`   |
-| `0.4`              | `2.7`              | `>=3.9`, `<=3.13`   |
-| `0.3`              | `2.7`              | `>=3.9`, `<=3.13`   |
-| `0.2`              | `2.6`              | `>=3.9`, `<=3.13`   |
-| `0.1`              | `2.5`              | `>=3.9`, `<=3.12`   |
-| `0.0.3`            | `2.4`              | `>=3.8`, `<=3.12`   |
+| `torchcodec`       | `torch`            | Python             |
+| ------------------ | ------------------ | ------------------ |
+| `main` / `nightly` | `main` / `nightly` | `>=3.10`, `<=3.13` |
+| `0.8`              | `2.9`              | `>=3.10`, `<=3.13` |
+| `0.7`              | `2.8`              | `>=3.9`, `<=3.13`  |
+| `0.6`              | `2.8`              | `>=3.9`, `<=3.13`  |
+| `0.5`              | `2.7`              | `>=3.9`, `<=3.13`  |
+| `0.4`              | `2.7`              | `>=3.9`, `<=3.13`  |
+| `0.3`              | `2.7`              | `>=3.9`, `<=3.13`  |
+| `0.2`              | `2.6`              | `>=3.9`, `<=3.13`  |
+| `0.1`              | `2.5`              | `>=3.9`, `<=3.12`  |
+| `0.0.3`            | `2.4`              | `>=3.8`, `<=3.12`  |
 
 ### Installing CUDA-enabled TorchCodec
 
@@ -181,7 +205,6 @@ format you want. Refer to Nvidia's GPU support matrix for more details
    [official instructions](https://pytorch.org/get-started/locally/). You'll
    need the `libnpp` and `libnvrtc` CUDA libraries, which are usually part of
    the CUDA Toolkit.
-
 
 3. Install TorchCodec
 

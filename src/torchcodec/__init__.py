@@ -14,3 +14,5 @@ try:
     from .version import __version__  # noqa: F401
 except Exception:
     pass
+
+__is_paddle_compatible_library__ = True

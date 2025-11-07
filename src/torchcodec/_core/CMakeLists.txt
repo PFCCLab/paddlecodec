@@ -5,7 +5,29 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 REQUIRED)
-find_package(Torch REQUIRED)
+#find_package(Torch REQUIRED)
+set(TORCH_CXX_FLAGS "")
+
+set(
+    TORCH_LIBRARIES
+    "${PADDLE_PATH}/base/libpaddle.so"
+    "${PADDLE_PATH}/libs/libcommon.so"
+    # "${PADDLE_PATH}/libs/libphi.so"  # currently libphi.so is static linked, we need remove it when it's shared linked
+    "${PADDLE_PATH}/libs/libphi_core.so"
+)
+set(
+    TORCH_INSTALL_PREFIX
+    "${PADDLE_PATH}"
+)
+## Debug: print Torch-related CMake variables so we can see what was found
+message(STATUS "[Torch DEBUG] Torch_DIR=${Torch_DIR}")
+message(STATUS "[Torch DEBUG] TORCH_LIBRARIES=${TORCH_LIBRARIES}")
+message(STATUS "[Torch DEBUG] TORCH_CXX_FLAGS=${TORCH_CXX_FLAGS}")
+message(STATUS "[Torch DEBUG] TORCH_INSTALL_PREFIX=${TORCH_INSTALL_PREFIX}")
+message(STATUS "[Torch DEBUG] TORCH_VERSION=${TORCH_VERSION}")
+if(TARGET "torch")
+    message(STATUS "[Torch DEBUG] Imported target 'torch' exists")
+endif()
 find_package(Python3 ${PYTHON_VERSION} EXACT COMPONENTS Development)
 
 if(DEFINED TORCHCODEC_DISABLE_COMPILE_WARNING_AS_ERROR AND TORCHCODEC_DISABLE_COMPILE_WARNING_AS_ERROR)
@@ -15,7 +37,7 @@ else()
         # TODO set warnings as errors on Windows as well.
         # set(TORCHCODEC_WERROR_OPTION "/WX")
     else()
-        set(TORCHCODEC_WERROR_OPTION "-Werror")
+        #set(TORCHCODEC_WERROR_OPTION "-Werror")
     endif()
 endif()
 
@@ -47,6 +69,9 @@ function(make_torchcodec_sublibrary
         PRIVATE
         ./../../../
         "${TORCH_INSTALL_PREFIX}/include"
+        "${TORCH_INSTALL_PREFIX}/include/third_party"
+        "${TORCH_INSTALL_PREFIX}/include/paddle/phi/api/include/compat"
+        "${TORCH_INSTALL_PREFIX}/include/paddle/phi/api/include/compat/torch/csrc/api/include"
         ${Python3_INCLUDE_DIRS}
     )
 
@@ -57,6 +82,7 @@ function(make_torchcodec_sublibrary
         ${library_name}
         PUBLIC
         ${library_dependencies}
+        "-Wl,--as-needed"
     )
 
 endfunction()

@@ -1,11 +1,11 @@
 [project]
-name = "torchcodec"
+name = "paddlecodec"
 description = "A video decoder for PyTorch"
 readme = "README.md"
 requires-python = ">=3.8"
 license-files = ["LICENSE"]
 authors = [
-    { name = "PyTorch Team", email = "packages@pytorch.org" },
+    { name = "PaddlePaddle Team", email = "Paddle-better@baidu.com" },
 ]
 dynamic = ["version"]
 

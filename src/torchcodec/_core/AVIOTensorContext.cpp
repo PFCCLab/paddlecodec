@@ -123,8 +123,10 @@ AVIOToTensorContext::AVIOToTensorContext()
 }
 
 torch::Tensor AVIOToTensorContext::getOutputTensor() {
-  return tensorContext_.data.narrow(
-      /*dim=*/0, /*start=*/0, /*length=*/tensorContext_.max_pos);
+  throw std::runtime_error(
+      "AVIOToTensorContext::getOutputTensor is not implemented yet.");
+  // return tensorContext_.data.narrow(
+  //     /*dim=*/0, /*start=*/0, /*length=*/tensorContext_.max_pos);
 }
 
 } // namespace facebook::torchcodec
