@@ -17,11 +17,4 @@ try:
 except Exception:
     pass
 
-# cmake_prefix_path is needed for downstream cmake-based builds that use
-# torchcodec as a dependency to tell cmake where torchcodec is installed and where to find its
-# CMake configuration files.
-# Pytorch itself has a similar mechanism which we use in our setup.py!
-cmake_prefix_path = Path(__file__).parent / "share" / "cmake"
-# Similarly, these are exposed for downstream builds that use torchcodec as a
-# dependency.
-from ._core import core_library_path, ffmpeg_major_version  # usort:skip
+__is_paddle_compatible_library__ = True

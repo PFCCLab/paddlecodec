@@ -151,7 +151,7 @@ def _generic_index_based_sampler(
 
     if kind == "random":
         clip_start_indices = torch.randint(
-            low=sampling_range_start, high=sampling_range_end, size=(num_clips,)
+            sampling_range_start, sampling_range_end, (num_clips,)
         )
     else:
         # Note [num clips larger than sampling range]

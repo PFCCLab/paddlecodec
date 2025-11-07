@@ -167,7 +167,7 @@ class VideoDecoder:
         stream_index: int | None = None,
         dimension_order: Literal["NCHW", "NHWC"] = "NCHW",
         num_ffmpeg_threads: int = 1,
-        device: str | torch_device | None = None,
+        device: Optional[Union[str, "torch_device"]] = "cpu",
         seek_mode: Literal["exact", "approximate"] = "exact",
         transforms: Sequence[DecoderTransform | nn.Module] | None = None,
         custom_frame_mappings: (
@@ -198,6 +198,40 @@ class VideoDecoder:
             )
 
         self._decoder = create_decoder(source=source, seek_mode=seek_mode)
+
+        allowed_dimension_orders = ("NCHW", "NHWC")
+        if dimension_order not in allowed_dimension_orders:
+            raise ValueError(
+                f"Invalid dimension order ({dimension_order}). "
+                f"Supported values are {', '.join(allowed_dimension_orders)}."
+            )
+
+        if num_ffmpeg_threads is None:
+            raise ValueError(f"{num_ffmpeg_threads = } should be an int.")
+
+        # if isinstance(device, torch_device):
+        #     device = str(device)
+        import paddle
+        if isinstance(device, paddle.base.core.Place):
+            if device.is_cpu_place():
+                return "cpu"
+            elif device.is_gpu_place():
+                return "gpu"
+            else:
+                raise NotImplementedError(f"{device} is not supported yet")
+
+        device_variant = _get_cuda_backend()
+
+        core.add_video_stream(
+            self._decoder,
+            num_threads=num_ffmpeg_threads,
+            dimension_order=dimension_order,
+            stream_index=stream_index,
+            device=device,
+            device_variant=device_variant,
+            transform_specs="",
+            custom_frame_mappings=custom_frame_mappings_data,
+        )
 
         (
             self.metadata,
@@ -365,6 +399,9 @@ class VideoDecoder:
             FrameBatch: The frames at the given indices.
         """
 
+        if isinstance(indices, list):
+            indices = torch.tensor(indices, dtype=torch.int64).cpu()
+
         data, pts_seconds, duration_seconds = core.get_frames_at_indices(
             self._decoder, frame_indices=indices
         )
@@ -441,6 +478,9 @@ class VideoDecoder:
         Returns:
             FrameBatch: The frames that are played at ``seconds``.
         """
+
+        if isinstance(seconds, list):
+            seconds = torch.tensor(seconds, dtype=torch.float32).cpu()
 
         data, pts_seconds, duration_seconds = core.get_frames_by_pts(
             self._decoder, timestamps=seconds

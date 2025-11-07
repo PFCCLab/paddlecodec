@@ -11,6 +11,7 @@
 #include <memory>
 #include <ostream>
 #include <string_view>
+#include <map>
 
 #include "AVIOContextHolder.h"
 #include "DeviceInterface.h"
