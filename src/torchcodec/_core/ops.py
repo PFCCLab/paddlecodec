@@ -11,7 +11,8 @@ from types import ModuleType
 from typing import List, Optional, Tuple, Union
 
 import torch
-from torch.library import get_ctx, register_fake
+# from torch.library import get_ctx, register_fake
+from torch.library import register_fake
 
 from torchcodec._internally_replaced_utils import (  # @manual=//pytorch/torchcodec/src:internally_replaced_utils
     _get_extension_path,
@@ -84,6 +85,12 @@ def load_torchcodec_shared_libraries():
 load_torchcodec_shared_libraries()
 
 
+import types
+class FakeDynamo(types.ModuleType):
+    def disallow_in_graph(self, fn):
+        return fn
+torch._dynamo = FakeDynamo("torch._dynamo")
+torch._C._log_api_usage_once = lambda *args, **kwargs: None
 # Note: We use disallow_in_graph because PyTorch does constant propagation of
 # factory functions.
 create_from_file = torch._dynamo.disallow_in_graph(
@@ -155,7 +162,9 @@ def create_from_bytes(
         # Ignore warning stating that the underlying video_bytes buffer is
         # non-writable.
         warnings.filterwarnings("ignore", category=UserWarning)
-        buffer = torch.frombuffer(video_bytes, dtype=torch.uint8)
+        # buffer = torch.frombuffer(video_bytes, dtype=torch.uint8)
+        import paddle
+        buffer = paddle.base.core.frombuffer(video_bytes, dtype=paddle.uint8)
     return create_from_tensor(buffer, seek_mode)
 
 
