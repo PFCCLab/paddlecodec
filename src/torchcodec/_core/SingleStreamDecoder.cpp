@@ -1030,15 +1030,15 @@ AudioFramesOutput SingleStreamDecoder::getFramesPlayedInRangeAudio(
     frames.push_back(*lastSamples);
   }
 
-  TORCH_CHECK(
-      frames.size() > 0 && firstFramePtsSeconds.has_value(),
-      "No audio frames were decoded. ",
-      "This is probably because start_seconds is too high(",
-      startSeconds,
-      "),",
-      "or because stop_seconds(",
-      stopSecondsOptional,
-      ") is too low.");
+  // TORCH_CHECK(
+  //     frames.size() > 0 && firstFramePtsSeconds.has_value(),
+  //     "No audio frames were decoded. ",
+  //     "This is probably because start_seconds is too high(",
+  //     startSeconds,
+  //     "),",
+  //     "or because stop_seconds(",
+  //     stopSecondsOptional,
+  //     ") is too low.");
 
   return AudioFramesOutput{torch::cat(frames, 1), *firstFramePtsSeconds};
 }
@@ -1419,8 +1419,11 @@ std::optional<torch::Tensor> SingleStreamDecoder::maybeFlushSwrBuffers() {
   auto actualNumRemainingSamples = swr_convert(
       swrContext_.get(), outputBuffers.data(), numRemainingSamples, nullptr, 0);
 
-  return lastSamples.narrow(
-      /*dim=*/1, /*start=*/0, /*length=*/actualNumRemainingSamples);
+  throw std::runtime_error(
+    "SingleStreamDecoder::maybeFlushSwrBuffers is not implemented yet.");
+
+  // return lastSamples.narrow(
+  //     /*dim=*/1, /*start=*/0, /*length=*/actualNumRemainingSamples);
 }
 
 // --------------------------------------------------------------------------

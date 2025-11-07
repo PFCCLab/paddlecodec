@@ -19,6 +19,9 @@ input to video models.
 # plotting utility. You can ignore that part and jump right below to
 # :ref:`sampling_tuto_start`.
 
+import paddle
+paddle.enable_compat(scope={"torchcodec"})
+
 from typing import Optional
 import torch
 import requests

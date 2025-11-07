@@ -10,6 +10,7 @@
 #include <string>
 #include "c10/core/SymIntArrayRef.h"
 #include "c10/util/Exception.h"
+#include "torch/library.h"
 #include "src/torchcodec/_core/AVIOFileLikeContext.h"
 #include "src/torchcodec/_core/AVIOTensorContext.h"
 #include "src/torchcodec/_core/Encoder.h"
@@ -27,8 +28,8 @@ namespace facebook::torchcodec {
 // calls to these functions. For more detail, see:
 //   https://github.com/pytorch/pytorch/tree/main/aten/src/ATen/native#readme
 TORCH_LIBRARY(torchcodec_ns, m) {
-  m.impl_abstract_pystub(
-      "torchcodec._core.ops", "//pytorch/torchcodec:torchcodec");
+  // m.impl_abstract_pystub(
+  //     "torchcodec._core.ops", "//pytorch/torchcodec:torchcodec");
   m.def("create_from_file(str filename, str? seek_mode=None) -> Tensor");
   m.def(
       "encode_audio_to_file(Tensor samples, int sample_rate, str filename, int? bit_rate=None, int? num_channels=None, int? desired_sample_rate=None) -> ()");
@@ -91,7 +92,7 @@ at::Tensor wrapDecoderPointerToTensor(
       decoder, {sizeof(SingleStreamDecoder*)}, deleter, {at::kLong});
   auto videoDecoder =
       static_cast<SingleStreamDecoder*>(tensor.mutable_data_ptr());
-  TORCH_CHECK_EQ(videoDecoder, decoder) << "videoDecoder=" << videoDecoder;
+  // TORCH_CHECK_EQ(videoDecoder, decoder) << "videoDecoder=" << videoDecoder;
   return tensor;
 }
 
@@ -113,10 +114,14 @@ SingleStreamDecoder* unwrapTensorToGetDecoder(at::Tensor& tensor) {
 using OpsFrameOutput = std::tuple<at::Tensor, at::Tensor, at::Tensor>;
 
 OpsFrameOutput makeOpsFrameOutput(FrameOutput& frame) {
-  return std::make_tuple(
+  // return std::make_tuple(
+  //     frame.data,
+  //     torch::tensor(frame.ptsSeconds, torch::dtype(torch::kFloat64)),
+  //     torch::tensor(frame.durationSeconds, torch::dtype(torch::kFloat64)));
+    return std::make_tuple(
       frame.data,
-      torch::tensor(frame.ptsSeconds, torch::dtype(torch::kFloat64)),
-      torch::tensor(frame.durationSeconds, torch::dtype(torch::kFloat64)));
+      torch::full({}, frame.ptsSeconds, torch::kFloat64),
+      torch::full({}, frame.durationSeconds, torch::kFloat64));
 }
 
 SingleStreamDecoder::FrameMappings makeFrameMappings(
@@ -149,9 +154,12 @@ OpsFrameBatchOutput makeOpsFrameBatchOutput(FrameBatchOutput& batch) {
 using OpsAudioFramesOutput = std::tuple<at::Tensor, at::Tensor>;
 
 OpsAudioFramesOutput makeOpsAudioFramesOutput(AudioFramesOutput& audioFrames) {
+  // return std::make_tuple(
+  //     audioFrames.data,
+  //     torch::tensor(audioFrames.ptsSeconds, torch::dtype(torch::kFloat64)));
   return std::make_tuple(
       audioFrames.data,
-      torch::tensor(audioFrames.ptsSeconds, torch::dtype(torch::kFloat64)));
+      torch::full({}, audioFrames.ptsSeconds, torch::kFloat64));
 }
 
 std::string quoteValue(const std::string& value) {
@@ -446,7 +454,8 @@ OpsFrameOutput get_next_frame(at::Tensor& decoder) {
   try {
     result = videoDecoder->getNextFrame();
   } catch (const SingleStreamDecoder::EndOfFileException& e) {
-    C10_THROW_ERROR(IndexError, e.what());
+    // C10_THROW_ERROR(IndexError, e.what());
+    throw pybind11::index_error(e.what());
   }
   return makeOpsFrameOutput(result);
 }
@@ -460,7 +469,8 @@ OpsFrameOutput get_frame_at_pts(at::Tensor& decoder, double seconds) {
   try {
     result = videoDecoder->getFramePlayedAt(seconds);
   } catch (const SingleStreamDecoder::EndOfFileException& e) {
-    C10_THROW_ERROR(IndexError, e.what());
+    // C10_THROW_ERROR(IndexError, e.what());
+    throw pybind11::index_error(e.what());
   }
   return makeOpsFrameOutput(result);
 }
@@ -910,15 +920,15 @@ void scan_all_streams_to_update_metadata(at::Tensor& decoder) {
   videoDecoder->scanFileAndUpdateMetadataAndIndex();
 }
 
-TORCH_LIBRARY_IMPL(torchcodec_ns, BackendSelect, m) {
+TORCH_LIBRARY_IMPL(torchcodec_ns, CPU, m) {
   m.impl("create_from_file", &create_from_file);
   m.impl("create_from_tensor", &create_from_tensor);
   m.impl("_create_from_file_like", &_create_from_file_like);
   m.impl(
       "_get_json_ffmpeg_library_versions", &_get_json_ffmpeg_library_versions);
-}
+// }
 
-TORCH_LIBRARY_IMPL(torchcodec_ns, CPU, m) {
+// TORCH_LIBRARY_IMPL(torchcodec_ns, CPU, m) {
   m.impl("encode_audio_to_file", &encode_audio_to_file);
   m.impl("encode_audio_to_tensor", &encode_audio_to_tensor);
   m.impl("_encode_audio_to_file_like", &_encode_audio_to_file_like);
