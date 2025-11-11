@@ -251,7 +251,7 @@ def get_frames_at_indices(
         frame_indices = frame_indices.to(torch.int64)
     else:
         # Convert list to tensor for dispatch
-        frame_indices = torch.tensor(frame_indices)
+        frame_indices = torch.tensor(frame_indices).cpu()
     return _get_frames_at_indices_tensor_input(decoder, frame_indices=frame_indices)
 
 
@@ -264,7 +264,7 @@ def get_frames_by_pts(
     else:
         # Convert list to tensor for dispatch
         try:
-            timestamps = torch.tensor(timestamps, dtype=torch.float64)
+            timestamps = torch.tensor(timestamps, dtype=torch.float64).cpu()
         except Exception as e:
             raise ValueError("Couldn't convert timestamps input to a tensor") from e
     return _get_frames_by_pts_tensor_input(decoder, timestamps=timestamps)
