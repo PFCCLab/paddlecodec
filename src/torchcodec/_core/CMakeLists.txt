@@ -14,7 +14,6 @@ set(
     "${PADDLE_PATH}/libs/libcommon.so"
     "${PADDLE_PATH}/libs/libphi.so"
     "${PADDLE_PATH}/libs/libphi_core.so"
-    "${PADDLE_PATH}/libs/libphi_gpu.so"
 )
 set(
     TORCH_INSTALL_PREFIX
