@@ -8,26 +8,122 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ffmpeg-LGPL-Linux-x86_64:
+  build-paddlecodec-wheel:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        ffmpeg-version: ["4.4.4", "5.1.4", "6.1.1", "7.0.1", "8.0"]
-    runs-on: ubuntu-latest
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     permissions:
       id-token: write
       contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-      - name: Build FFmpeg
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build dependencies
         run: |
-          export FFMPEG_VERSION="${{ matrix.ffmpeg-version }}"
-          export FFMPEG_ROOT="${PWD}/ffmpeg"
-          packaging/build_ffmpeg.sh
-          tar -cf ffmpeg.tar.gz ffmpeg/include ffmpeg/lib
-      - name: Upload FFmpeg artifact
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools pybind11
+
+      - name: Install PaddlePaddle nightly
+        run: |
+          pip install --pre paddlepaddle -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
+
+      - name: Run pre-build script
+        run: |
+          bash packaging/pre_build_script.sh
+
+      - name: Build wheel
+        run: |
+          # Use pre-built FFmpeg from PyTorch S3
+          export BUILD_AGAINST_ALL_FFMPEG_FROM_S3=1
+          python -m build --wheel -vvv --no-isolation
+
+      - name: Run post-build script
+        run: |
+          bash packaging/post_build_script.sh
+
+      - name: Upload wheel artifact
         uses: actions/upload-artifact@v5
         with:
-          name: ffmpeg-lgpl-linux_x86_64-${{ matrix.ffmpeg-version }}
-          path: ffmpeg.tar.gz
+          name: paddlecodec-wheel-linux-py${{ matrix.python-version }}
+          path: dist/*.whl
+
+      - name: List wheel contents
+        run: |
+          wheel_path=$(find dist -type f -name "*.whl")
+          echo "Wheel path: $wheel_path"
+          unzip -l $wheel_path
+
+  test-paddlecodec-wheel:
+    needs: build-paddlecodec-wheel
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        ffmpeg-version: ["4.4.2", "5.1.2", "6.1.1", "7.0.1", "8.0"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: paddlecodec-wheel-linux-py${{ matrix.python-version }}
+          path: dist/
+
+      - name: Install PaddlePaddle nightly
+        run: |
+          pip install --pre paddlepaddle -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
+
+      - name: Install paddlecodec from wheel
+        run: |
+          wheel_path=$(find dist -type f -name "*.whl")
+          echo "Installing $wheel_path"
+          pip install $wheel_path -vvv
+
+      - name: Install FFmpeg via conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          miniforge-version: latest
+          activate-environment: test
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install FFmpeg from conda-forge
+        shell: bash -l {0}
+        run: |
+          source packaging/helpers.sh
+          # Check FFmpeg is not installed before
+          if command -v ffmpeg &> /dev/null; then
+            echo "Warning: FFmpeg is already installed"
+          fi
+
+          conda install "ffmpeg=${{ matrix.ffmpeg-version }}" -c conda-forge -y
+          ffmpeg -version
+
+      - name: Install test dependencies
+        run: |
+          pip install numpy pytest pillow
+
+      - name: Delete src folder
+        run: |
+          # Delete src/ to ensure we're testing the installed wheel, not source code
+          rm -rf src/
+          ls -la
+
+      - name: Run tests
+        run: |
+          pytest --override-ini="addopts=-v" test
