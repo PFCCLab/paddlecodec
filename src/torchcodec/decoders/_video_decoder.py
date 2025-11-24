@@ -102,7 +102,7 @@ class VideoDecoder:
         stream_index: Optional[int] = None,
         dimension_order: Literal["NCHW", "NHWC"] = "NCHW",
         num_ffmpeg_threads: int = 1,
-        device: Optional[Union[str, torch_device]] = "cpu",
+        device: Optional[Union[str, "torch_device"]] = "cpu",
         seek_mode: Literal["exact", "approximate"] = "exact",
         custom_frame_mappings: Optional[
             Union[str, bytes, io.RawIOBase, io.BufferedReader]

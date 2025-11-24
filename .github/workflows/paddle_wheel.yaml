@@ -60,15 +60,15 @@ jobs:
           export BUILD_AGAINST_ALL_FFMPEG_FROM_S3=1
           python -m build --wheel -vvv --no-isolation
 
-      - name: Run post-build script
-        run: |
-          bash packaging/post_build_script.sh
-
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v5
         with:
           name: paddlecodec-wheel-linux-py${{ matrix.python-version }}
           path: dist/*.whl
+
+      - name: Run post-build script
+        run: |
+          bash packaging/post_build_script.sh
 
       - name: List wheel contents
         run: |
