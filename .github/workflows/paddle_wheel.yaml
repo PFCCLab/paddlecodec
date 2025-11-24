@@ -1,0 +1,33 @@
+name: Build Wheels for Paddle
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  build-ffmpeg-LGPL-Linux-x86_64:
+    strategy:
+      fail-fast: false
+      matrix:
+        ffmpeg-version: ["4.4.4", "5.1.4", "6.1.1", "7.0.1", "8.0"]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Build FFmpeg
+        run: |
+          export FFMPEG_VERSION="${{ matrix.ffmpeg-version }}"
+          export FFMPEG_ROOT="${PWD}/ffmpeg"
+          packaging/build_ffmpeg.sh
+          tar -cf ffmpeg.tar.gz ffmpeg/include ffmpeg/lib
+      - name: Upload FFmpeg artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ffmpeg-lgpl-linux_x86_64-${{ matrix.ffmpeg-version }}
+          path: ffmpeg.tar.gz
