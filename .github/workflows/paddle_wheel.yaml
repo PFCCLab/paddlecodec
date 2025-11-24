@@ -27,7 +27,7 @@ jobs:
           packaging/build_ffmpeg.sh
           tar -cf ffmpeg.tar.gz ffmpeg/include ffmpeg/lib
       - name: Upload FFmpeg artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: ffmpeg-lgpl-linux_x86_64-${{ matrix.ffmpeg-version }}
           path: ffmpeg.tar.gz
