@@ -22,6 +22,8 @@ defaults:
 jobs:
   build-paddlecodec-wheel:
     runs-on: ubuntu-latest
+    container:
+      image: pytorch/manylinux2_28-builder:cpu
     strategy:
       fail-fast: false
       matrix:
