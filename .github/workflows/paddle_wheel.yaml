@@ -120,7 +120,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install FFmpeg from conda-forge
-        shell: bash -l {0}
         run: |
           source packaging/helpers.sh
           # Check FFmpeg is not installed before
@@ -143,4 +142,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --override-ini="addopts=-v" test
+          pytest --override-ini="addopts=-v" test_paddle
