@@ -101,16 +101,6 @@ jobs:
           name: paddlecodec-wheel-linux-py${{ matrix.python-version }}
           path: dist/
 
-      - name: Install PaddlePaddle nightly
-        run: |
-          pip install --pre paddlepaddle -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
-
-      - name: Install paddlecodec from wheel
-        run: |
-          wheel_path=$(find dist -type f -name "*.whl")
-          echo "Installing $wheel_path"
-          pip install $wheel_path -vvv
-
       - name: Install FFmpeg via conda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -120,16 +110,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install FFmpeg from conda-forge
-        shell: bash -l {0}
         run: |
-          source packaging/helpers.sh
-          # Check FFmpeg is not installed before
-          if command -v ffmpeg &> /dev/null; then
-            echo "Warning: FFmpeg is already installed"
-          fi
-
           conda install "ffmpeg=${{ matrix.ffmpeg-version }}" -c conda-forge -y
           ffmpeg -version
+
+      - name: Install PaddlePaddle nightly in conda env
+        run: |
+          pip install --pre paddlepaddle -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
+
+      - name: Install paddlecodec from wheel
+        run: |
+          wheel_path=$(find dist -type f -name "*.whl")
+          echo "Installing $wheel_path"
+          pip install $wheel_path -vvv
 
       - name: Install test dependencies
         run: |
