@@ -119,7 +119,7 @@ def read_video_torchcodec(
     indices = sample_indices_fn(metadata=metadata, **kwargs)
 
     video = decoder.get_frames_at(indices=indices).data
-    video = video.cuda().contiguous().cpu()
+    video = video.contiguous()
     metadata.frames_indices = indices
     return video, metadata
 
