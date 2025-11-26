@@ -80,8 +80,7 @@ jobs:
 
   test-paddlecodec-wheel:
     needs: build-paddlecodec-wheel
-    runs-on:
-      group: custom-ext-linux-cpu
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
