@@ -136,4 +136,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --override-ini="addopts=-v" test_paddle
+          pytest --override-ini="addopts=-v" -s test_paddle
