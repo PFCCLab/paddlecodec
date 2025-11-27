@@ -111,7 +111,9 @@ jobs:
 
       - name: Install FFmpeg from conda-forge
         run: |
-          conda install "ffmpeg=${{ matrix.ffmpeg-version }}" -c conda-forge -y
+          # Install libstdcxx-ng for CXXABI compatibility
+          # Attempt to pin libopenvino to 2025.0.0 to match Paddle's bundled version and avoid segfault
+          conda install "ffmpeg=${{ matrix.ffmpeg-version }}" libstdcxx-ng "libopenvino=2025.0.0" -c conda-forge -y
           ffmpeg -version
 
       - name: Install PaddlePaddle nightly in conda env
