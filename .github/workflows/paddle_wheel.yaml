@@ -118,7 +118,7 @@ jobs:
 
       - name: Install PaddlePaddle nightly in conda env
         run: |
-          pip install --pre paddlepaddle -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
+          pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/cu126/
 
       - name: Install paddlecodec from wheel
         run: |
