@@ -2,7 +2,6 @@ import paddle
 paddle.compat.enable_torch_proxy(scope={"torchcodec"})
 
 import pytest
-import torch
 from dataclasses import dataclass, fields
 from io import BytesIO
 from typing import Callable, Mapping, Optional, Union
