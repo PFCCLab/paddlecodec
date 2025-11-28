@@ -171,7 +171,7 @@ def load_video(
 def test_video_decode():
     url = "https://paddlenlp.bj.bcebos.com/datasets/paddlemix/demo_video/example_video.mp4"
     video, metadata = load_video(url, backend="torchcodec")
-    assert video.to(torch.int64).sum().item() == 247759890390
+    assert video.to(paddle.int64).sum().item() == 247759890390
     assert metadata.total_num_frames == 263
     assert metadata.fps == pytest.approx(29.99418249715141)
     assert metadata.width == 1920

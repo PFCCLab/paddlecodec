@@ -91,6 +91,10 @@ class FakeDynamo(types.ModuleType):
         return fn
 torch._dynamo = FakeDynamo("torch._dynamo")
 torch._C._log_api_usage_once = lambda *args, **kwargs: None
+# TODO: torch.__setattr__ should trigger paddle.__setattr__
+import paddle
+paddle._dynamo = FakeDynamo("torch._dynamo")
+paddle._C._log_api_usage_once = lambda *args, **kwargs: None
 # Note: We use disallow_in_graph because PyTorch does constant propagation of
 # factory functions.
 create_from_file = torch._dynamo.disallow_in_graph(
