@@ -1,5 +1,5 @@
 import paddle
-paddle.compat.enable_torch_proxy()
+paddle.compat.enable_torch_proxy(scope={"torchcodec"})
 
 import pytest
 import torch
