@@ -69,15 +69,24 @@ jobs:
           pip install auditwheel
           # Dynamically find all library paths and add them to LD_LIBRARY_PATH
           FFMPEG_LIB_PATHS=$(find $(pwd)/build_cmake/_deps -type d -name "lib" | tr '\n' ':')
-          export LD_LIBRARY_PATH=${FFMPEG_LIB_PATHS}${LD_LIBRARY_PATH}
-          
+
+          # Get PaddlePaddle library paths
+          PADDLE_PATH=$(python -c "import paddle; print(paddle.__path__[0])")
+          PADDLE_LIB_PATHS="$PADDLE_PATH/base:$PADDLE_PATH/libs"
+
+          export LD_LIBRARY_PATH=${FFMPEG_LIB_PATHS}${PADDLE_LIB_PATHS}:${LD_LIBRARY_PATH}
+
           # Dynamically generate exclude arguments for all FFmpeg libraries found
           EXCLUDE_ARGS=""
           for lib in $(find build_cmake/_deps -name "*.so.*" | xargs -n 1 basename | sort | uniq); do
             EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude $lib"
           done
+
+          # Add PaddlePaddle libraries to exclude list
+          EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude libpaddle.so --exclude libcommon.so --exclude libphi_core.so"
+
           echo "Excluding libraries: $EXCLUDE_ARGS"
-          
+
           auditwheel repair dist/*.whl --plat manylinux_2_28_x86_64 -w wheelhouse/ $EXCLUDE_ARGS
           rm dist/*.whl
           mv wheelhouse/*.whl dist/
