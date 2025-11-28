@@ -2,7 +2,7 @@ name: Build Wheels for Paddle
 
 on:
   push:
-    branches: [main]
+    branches: [paddle]
     tags: ["v*"]
   pull_request:
   merge_group:
