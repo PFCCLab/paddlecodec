@@ -63,6 +63,14 @@ jobs:
           export BUILD_AGAINST_ALL_FFMPEG_FROM_S3=1
           python -m build --wheel -vvv --no-isolation
 
+      - name: Repair wheel
+        run: |
+          pip install auditwheel
+          auditwheel repair dist/*.whl --plat manylinux_2_28_x86_64 -w wheelhouse/
+          rm dist/*.whl
+          mv wheelhouse/*.whl dist/
+          rmdir wheelhouse
+
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v5
         with:
