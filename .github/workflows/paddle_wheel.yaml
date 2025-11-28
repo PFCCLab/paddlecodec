@@ -67,27 +67,31 @@ jobs:
       - name: Repair wheel
         run: |
           pip install auditwheel
-          # Dynamically find all library paths and add them to LD_LIBRARY_PATH
-          FFMPEG_LIB_PATHS=$(find $(pwd)/build_cmake/_deps -type d -name "lib" | tr '\n' ':')
 
-          # Get PaddlePaddle library paths
+          # 1. Extract internal libraries from the wheel to a temporary directory
+          # This allows auditwheel to find them when checking dependencies
+          mkdir -p temp_libs
+          unzip -j dist/*.whl "torchcodec/*.so" -d temp_libs || true
+
+          # 2. Prepare LD_LIBRARY_PATH
+          # FFmpeg libraries
+          FFMPEG_LIB_PATHS=$(find $(pwd)/build_cmake/_deps -type d -name "lib" | tr '\n' ':')
+          # PaddlePaddle libraries
           PADDLE_PATH=$(python -c "import paddle; print(paddle.__path__[0])")
           PADDLE_LIB_PATHS="$PADDLE_PATH/base:$PADDLE_PATH/libs"
+          # Wheel internal libraries
+          INTERNAL_LIB_PATH=$(pwd)/temp_libs
 
-          export LD_LIBRARY_PATH=${FFMPEG_LIB_PATHS}${PADDLE_LIB_PATHS}:${LD_LIBRARY_PATH}
+          export LD_LIBRARY_PATH=${FFMPEG_LIB_PATHS}${PADDLE_LIB_PATHS}:${INTERNAL_LIB_PATH}:${LD_LIBRARY_PATH}
 
-          # Dynamically generate exclude arguments for all FFmpeg libraries found
-          EXCLUDE_ARGS=""
-          for lib in $(find build_cmake/_deps -name "*.so.*" | xargs -n 1 basename | sort | uniq); do
-            EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude $lib"
-          done
+          # 3. Repair wheel with auditwheel
+          # We exclude all external libraries because we want to rely on system libraries (like FFmpeg)
+          # or libraries provided by other packages (like PaddlePaddle).
+          # auditwheel 6.1.0+ supports wildcards in --exclude.
+          auditwheel repair dist/*.whl --plat manylinux_2_28_x86_64 -w wheelhouse/ --exclude "*"
 
-          # Add PaddlePaddle libraries to exclude list
-          EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude libpaddle.so --exclude libcommon.so --exclude libphi_core.so"
-
-          echo "Excluding libraries: $EXCLUDE_ARGS"
-
-          auditwheel repair dist/*.whl --plat manylinux_2_28_x86_64 -w wheelhouse/ $EXCLUDE_ARGS
+          # Cleanup
+          rm -rf temp_libs
           rm dist/*.whl
           mv wheelhouse/*.whl dist/
           rmdir wheelhouse
