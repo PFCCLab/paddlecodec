@@ -61,12 +61,24 @@ jobs:
         run: |
           # Use pre-built FFmpeg from PyTorch S3
           export BUILD_AGAINST_ALL_FFMPEG_FROM_S3=1
+          export TORCHCODEC_CMAKE_BUILD_DIR=$(pwd)/build_cmake
           python -m build --wheel -vvv --no-isolation
 
       - name: Repair wheel
         run: |
           pip install auditwheel
-          auditwheel repair dist/*.whl --plat manylinux_2_28_x86_64 -w wheelhouse/
+          # Dynamically find all library paths and add them to LD_LIBRARY_PATH
+          FFMPEG_LIB_PATHS=$(find $(pwd)/build_cmake/_deps -type d -name "lib" | tr '\n' ':')
+          export LD_LIBRARY_PATH=${FFMPEG_LIB_PATHS}${LD_LIBRARY_PATH}
+          
+          # Dynamically generate exclude arguments for all FFmpeg libraries found
+          EXCLUDE_ARGS=""
+          for lib in $(find build_cmake/_deps -name "*.so.*" | xargs -n 1 basename | sort | uniq); do
+            EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude $lib"
+          done
+          echo "Excluding libraries: $EXCLUDE_ARGS"
+          
+          auditwheel repair dist/*.whl --plat manylinux_2_28_x86_64 -w wheelhouse/ $EXCLUDE_ARGS
           rm dist/*.whl
           mv wheelhouse/*.whl dist/
           rmdir wheelhouse
