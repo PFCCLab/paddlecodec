@@ -20,7 +20,7 @@ input to video models.
 # :ref:`sampling_tuto_start`.
 
 import paddle
-paddle.compat.enable_torch_proxy()
+paddle.compat.enable_torch_proxy(scope={"torchcodec"})
 
 from typing import Optional
 import torch

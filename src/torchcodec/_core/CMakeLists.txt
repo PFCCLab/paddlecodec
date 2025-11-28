@@ -12,9 +12,8 @@ set(
     TORCH_LIBRARIES
     "${PADDLE_PATH}/base/libpaddle.so"
     "${PADDLE_PATH}/libs/libcommon.so"
-    "${PADDLE_PATH}/libs/libphi.so"
+    # "${PADDLE_PATH}/libs/libphi.so"  # currently libphi.so is static linked, we need remove it when it's shared linked
     "${PADDLE_PATH}/libs/libphi_core.so"
-    "${PADDLE_PATH}/libs/libphi_gpu.so"
 )
 set(
     TORCH_INSTALL_PREFIX
