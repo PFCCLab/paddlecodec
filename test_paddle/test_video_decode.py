@@ -168,25 +168,6 @@ def load_video(
     video, metadata = video_decoder(file_obj, sample_indices_fn, **kwargs)
     return video, metadata
 
-def check_openvino():
-    import ctypes
-    import os
-    mode = os.RTLD_NOW | os.RTLD_GLOBAL
-    try:
-        ctypes.CDLL("libopenvino.so.2500", mode)
-    except OSError:
-        print("Failed to load libopenvino.so.2500")
-    else:
-        print("Successfully loaded libopenvino.so.2500")
-
-    try:
-        ctypes.CDLL("libopenvino.so.2520", mode)
-    except OSError:
-        print("Failed to load libopenvino.so.2520")
-    else:
-        print("Successfully loaded libopenvino.so.2520")
-
-
 
 def test_video_decode():
     url = "https://paddlenlp.bj.bcebos.com/datasets/paddlemix/demo_video/example_video.mp4"
@@ -197,6 +178,5 @@ def test_video_decode():
     assert metadata.width == 1920
     assert metadata.height == 1080
     assert metadata.duration == pytest.approx(8.768367)
-    check_openvino()
     for i, idx in enumerate(metadata.frames_indices):
         assert idx == i
