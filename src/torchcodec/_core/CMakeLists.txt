@@ -130,6 +130,14 @@ function(make_torchcodec_sublibrary
         )
     endif()
 
+    if(APPLE)
+        target_link_options(
+            ${library_name}
+            PUBLIC
+            "LINKER:-undefined,dynamic_lookup"
+        )
+    endif()
+
 endfunction()
 
 function(make_torchcodec_libraries
