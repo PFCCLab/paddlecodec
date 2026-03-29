@@ -1419,11 +1419,8 @@ std::optional<torch::Tensor> SingleStreamDecoder::maybeFlushSwrBuffers() {
   auto actualNumRemainingSamples = swr_convert(
       swrContext_.get(), outputBuffers.data(), numRemainingSamples, nullptr, 0);
 
-  throw std::runtime_error(
-    "SingleStreamDecoder::maybeFlushSwrBuffers is not implemented yet.");
-
-  // return lastSamples.narrow(
-  //     /*dim=*/1, /*start=*/0, /*length=*/actualNumRemainingSamples);
+  return lastSamples.narrow(
+      /*dim=*/1, /*start=*/0, /*length=*/actualNumRemainingSamples);
 }
 
 // --------------------------------------------------------------------------
