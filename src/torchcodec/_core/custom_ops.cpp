@@ -10,12 +10,12 @@
 #include <string>
 #include "c10/core/SymIntArrayRef.h"
 #include "c10/util/Exception.h"
-#include "torch/library.h"
 #include "src/torchcodec/_core/AVIOFileLikeContext.h"
 #include "src/torchcodec/_core/AVIOTensorContext.h"
 #include "src/torchcodec/_core/Encoder.h"
 #include "src/torchcodec/_core/SingleStreamDecoder.h"
 #include "src/torchcodec/_core/ValidationUtils.h"
+#include "torch/library.h"
 
 namespace facebook::torchcodec {
 
@@ -118,7 +118,7 @@ OpsFrameOutput makeOpsFrameOutput(FrameOutput& frame) {
   //     frame.data,
   //     torch::tensor(frame.ptsSeconds, torch::dtype(torch::kFloat64)),
   //     torch::tensor(frame.durationSeconds, torch::dtype(torch::kFloat64)));
-    return std::make_tuple(
+  return std::make_tuple(
       frame.data,
       torch::full({}, frame.ptsSeconds, torch::kFloat64),
       torch::full({}, frame.durationSeconds, torch::kFloat64));
@@ -920,15 +920,15 @@ void scan_all_streams_to_update_metadata(at::Tensor& decoder) {
   videoDecoder->scanFileAndUpdateMetadataAndIndex();
 }
 
-TORCH_LIBRARY_IMPL(torchcodec_ns, CPU, m) {
+TORCH_LIBRARY_IMPL(torchcodec_ns, BackendSelect, m) {
   m.impl("create_from_file", &create_from_file);
   m.impl("create_from_tensor", &create_from_tensor);
   m.impl("_create_from_file_like", &_create_from_file_like);
   m.impl(
       "_get_json_ffmpeg_library_versions", &_get_json_ffmpeg_library_versions);
-// }
+}
 
-// TORCH_LIBRARY_IMPL(torchcodec_ns, CPU, m) {
+TORCH_LIBRARY_IMPL(torchcodec_ns, CPU, m) {
   m.impl("encode_audio_to_file", &encode_audio_to_file);
   m.impl("encode_audio_to_tensor", &encode_audio_to_tensor);
   m.impl("_encode_audio_to_file_like", &_encode_audio_to_file_like);
