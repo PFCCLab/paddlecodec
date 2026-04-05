@@ -1030,15 +1030,15 @@ AudioFramesOutput SingleStreamDecoder::getFramesPlayedInRangeAudio(
     frames.push_back(*lastSamples);
   }
 
-  // TORCH_CHECK(
-  //     frames.size() > 0 && firstFramePtsSeconds.has_value(),
-  //     "No audio frames were decoded. ",
-  //     "This is probably because start_seconds is too high(",
-  //     startSeconds,
-  //     "),",
-  //     "or because stop_seconds(",
-  //     stopSecondsOptional,
-  //     ") is too low.");
+  TORCH_CHECK(
+      frames.size() > 0 && firstFramePtsSeconds.has_value(),
+      "No audio frames were decoded. ",
+      "This is probably because start_seconds is too high(",
+      startSeconds,
+      "),",
+      "or because stop_seconds(",
+      stopSecondsOptional,
+      ") is too low.");
 
   return AudioFramesOutput{torch::cat(frames, 1), *firstFramePtsSeconds};
 }
