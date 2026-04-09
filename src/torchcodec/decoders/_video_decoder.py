@@ -146,6 +146,7 @@ class VideoDecoder:
         # if isinstance(device, torch_device):
         #     device = str(device)
         import paddle
+
         if isinstance(device, paddle.base.core.Place):
             if device.is_cpu_place():
                 return "cpu"
@@ -158,12 +159,11 @@ class VideoDecoder:
 
         core.add_video_stream(
             self._decoder,
-            num_threads=num_ffmpeg_threads,
-            dimension_order=dimension_order,
             stream_index=stream_index,
+            dimension_order=dimension_order,
+            num_threads=num_ffmpeg_threads,
             device=device,
             device_variant=device_variant,
-            transform_specs="",
             custom_frame_mappings=custom_frame_mappings_data,
         )
 
@@ -265,9 +265,6 @@ class VideoDecoder:
             FrameBatch: The frames at the given indices.
         """
 
-        if isinstance(indices, list):
-            indices = torch.tensor(indices, dtype=torch.int64).cpu()
-
         data, pts_seconds, duration_seconds = core.get_frames_at_indices(
             self._decoder, frame_indices=indices
         )
@@ -346,9 +343,6 @@ class VideoDecoder:
         Returns:
             FrameBatch: The frames that are played at ``seconds``.
         """
-
-        if isinstance(seconds, list):
-            seconds = torch.tensor(seconds, dtype=torch.float32).cpu()
 
         data, pts_seconds, duration_seconds = core.get_frames_by_pts(
             self._decoder, timestamps=seconds
