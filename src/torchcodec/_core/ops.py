@@ -35,12 +35,6 @@ if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
             return os.add_dll_directory(str(ffmpeg_dir))  # that's the actual CM
 
 
-with expose_ffmpeg_dlls():
-    ffmpeg_major_version, core_library_path, _pybind_ops = (
-        load_torchcodec_shared_libraries()
-    )
-
-
 import types
 class FakeDynamo(types.ModuleType):
     def disallow_in_graph(self, fn):
