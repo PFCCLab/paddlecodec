@@ -20,13 +20,6 @@ if (LINUX)
             platform_url
             ${base_url}/linux_aarch64
         )
-
-    if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
-        set(
-            platform_url
-            ${base_url}/linux_aarch64
-        )
-
         set(
             f4_sha256
             a310a2ed9ffe555fd3278dae15065541098dd35e124564671dcda6a6620ac842
