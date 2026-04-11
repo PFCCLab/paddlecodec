@@ -97,7 +97,7 @@ jobs:
 
       - name: Install PaddlePaddle nightly
         run: |
-          pip install --pre paddlepaddle -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
+          pip install --pre paddlepaddle==3.3.1.post20260409+52c898ee9ac -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
 
       - name: Run pre-build script
         run: |
@@ -206,7 +206,7 @@ jobs:
 
       - name: Install PaddlePaddle nightly in conda env
         run: |
-          pip install --pre paddlepaddle -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
+          pip install --pre paddlepaddle==3.3.1.post20260409+52c898ee9ac -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
 
       - name: Install paddlecodec from wheel
         run: |
