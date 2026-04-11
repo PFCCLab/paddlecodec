@@ -81,6 +81,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # Avoid GitHub's synthetic PR merge ref; test the PR head commit directly.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup conda environment
         uses: conda-incubator/setup-miniconda@v3
@@ -178,6 +181,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # Avoid GitHub's synthetic PR merge ref; test the PR head commit directly.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Download wheel artifact
         uses: actions/download-artifact@v4
