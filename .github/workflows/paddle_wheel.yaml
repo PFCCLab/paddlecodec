@@ -97,7 +97,7 @@ jobs:
 
       - name: Install PaddlePaddle nightly
         run: |
-          pip install --pre paddlepaddle==3.3.1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+          pip install --pre paddlepaddle==3.4.0.dev20251223 -i https://www.paddlepaddle.org.cn/packages/nightly/cpu/
 
       - name: Run pre-build script
         run: |
