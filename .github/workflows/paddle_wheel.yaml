@@ -20,15 +20,61 @@ defaults:
   run:
     shell: bash -l -eo pipefail {0}
 
+env:
+  PADDLECODEC_TEST_VIDEO_URL: https://paddlenlp.bj.bcebos.com/datasets/paddlemix/demo_video/example_video.mp4
+  PADDLECODEC_TEST_VIDEO_CACHE_KEY: paddlecodec-test-video-v1-example-video
+  PADDLECODEC_TEST_VIDEO_PATH: .github/test-assets/example_video.mp4
+
 jobs:
-  build-paddlecodec-wheel:
+  prepare-test-video:
     runs-on: ubuntu-latest
+    name: Prepare cached Paddle test video
+    steps:
+      - name: Restore cached test video
+        id: cache-test-video
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PADDLECODEC_TEST_VIDEO_PATH }}
+          key: ${{ env.PADDLECODEC_TEST_VIDEO_CACHE_KEY }}
+
+      - name: Download test video
+        if: steps.cache-test-video.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "$(dirname "${PADDLECODEC_TEST_VIDEO_PATH}")"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "${PADDLECODEC_TEST_VIDEO_PATH}" \
+            "${PADDLECODEC_TEST_VIDEO_URL}"
+
+      - name: Upload cached test video artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: paddlecodec-test-video
+          path: ${{ env.PADDLECODEC_TEST_VIDEO_PATH }}
+          if-no-files-found: error
+
+  build-paddlecodec-wheel:
+    name: Build and upload Paddle wheel (${{ matrix.arch-name }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.runner }}
     container:
-      image: pytorch/manylinux2_28-builder:cpu
+      image: ${{ matrix.container-image }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
+        arch: ["x86_64", "arm64"]
+        include:
+          - arch: x86_64
+            arch-name: x86_64
+            runner: ubuntu-latest
+            container-image: pytorch/manylinux2_28-builder:cpu
+            artifact-prefix: paddlecodec-wheel-linux
+            wheel-platform: manylinux_2_28_x86_64
+          - arch: arm64
+            arch-name: arm64
+            runner: ubuntu-24.04-arm
+            container-image: pytorch/manylinux2_28_aarch64-builder:cpu-aarch64
+            artifact-prefix: paddlecodec-wheel-linux-arm64
+            wheel-platform: manylinux_2_28_aarch64
     permissions:
       id-token: write
       contents: read
@@ -59,8 +105,8 @@ jobs:
 
       - name: Build wheel
         run: |
-          # Use pre-built FFmpeg from PyTorch S3
           export BUILD_AGAINST_ALL_FFMPEG_FROM_S3=1
+          export I_CONFIRM_THIS_IS_NOT_A_LICENSE_VIOLATION=1
           export TORCHCODEC_CMAKE_BUILD_DIR=$(pwd)/build_cmake
           python -m build --wheel -vvv --no-isolation
 
@@ -68,29 +114,18 @@ jobs:
         run: |
           pip install auditwheel
 
-          # 1. Extract internal libraries from the wheel to a temporary directory
-          # This allows auditwheel to find them when checking dependencies
           mkdir -p temp_libs
           unzip -j dist/*.whl "torchcodec/*.so" -d temp_libs || true
 
-          # 2. Prepare LD_LIBRARY_PATH
-          # FFmpeg libraries
-          FFMPEG_LIB_PATHS=$(find $(pwd)/build_cmake/_deps -type d -name "lib" | tr '\n' ':')
-          # PaddlePaddle libraries
+          FFMPEG_LIB_PATHS=$(find "$(pwd)/build_cmake/_deps" -type d -name "lib" -print | paste -sd: -)
           PADDLE_PATH=$(python -c "import paddle; print(paddle.__path__[0])")
           PADDLE_LIB_PATHS="$PADDLE_PATH/base:$PADDLE_PATH/libs"
-          # Wheel internal libraries
           INTERNAL_LIB_PATH=$(pwd)/temp_libs
 
-          export LD_LIBRARY_PATH=${FFMPEG_LIB_PATHS}${PADDLE_LIB_PATHS}:${INTERNAL_LIB_PATH}:${LD_LIBRARY_PATH}
+          export LD_LIBRARY_PATH=${FFMPEG_LIB_PATHS}:${PADDLE_LIB_PATHS}:${INTERNAL_LIB_PATH}:${LD_LIBRARY_PATH}
 
-          # 3. Repair wheel with auditwheel
-          # We exclude all external libraries because we want to rely on system libraries (like FFmpeg)
-          # or libraries provided by other packages (like PaddlePaddle).
-          # auditwheel 6.1.0+ supports wildcards in --exclude.
-          auditwheel repair dist/*.whl --plat manylinux_2_28_x86_64 -w wheelhouse/ --exclude "*"
+          auditwheel repair dist/*.whl --plat ${{ matrix.wheel-platform }} -w wheelhouse/ --exclude "*"
 
-          # Cleanup
           rm -rf temp_libs
           rm dist/*.whl
           mv wheelhouse/*.whl dist/
@@ -99,7 +134,7 @@ jobs:
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v5
         with:
-          name: paddlecodec-wheel-linux-py${{ matrix.python-version }}
+          name: ${{ matrix.artifact-prefix }}-py${{ matrix.python-version }}
           path: dist/*.whl
 
       - name: Run post-build script
@@ -113,30 +148,48 @@ jobs:
           unzip -l $wheel_path
 
   test-paddlecodec-wheel:
-    needs: build-paddlecodec-wheel
-    runs-on: ubuntu-latest
+    name: Install and test Paddle wheel (${{ matrix.arch-name }}, py${{ matrix.python-version }}, ffmpeg ${{ matrix.ffmpeg-version }})
+    needs: [prepare-test-video, build-paddlecodec-wheel]
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: ${{ matrix.container-image }}
+    env:
+      PADDLECODEC_TEST_VIDEO: .github/test-assets/example_video.mp4
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
+        arch: ["x86_64", "arm64"]
         # FFmpeg 8.0 depends on libopenvino.so.2520, PaddlePaddle CPU depends on libopenvino.so.2500
         # There has some conflict causing test failures, but it works with PaddlePaddle GPU.
         # We skip FFmpeg 8.0 tests for PaddlePaddle CPU builds for now.
         ffmpeg-version: ["4.4.2", "5.1.2", "6.1.1", "7.0.1"]
+        include:
+          - arch: x86_64
+            arch-name: x86_64
+            runner: ubuntu-latest
+            container-image: pytorch/manylinux2_28-builder:cpu
+            artifact-prefix: paddlecodec-wheel-linux
+          - arch: arm64
+            arch-name: arm64
+            runner: ubuntu-24.04-arm
+            container-image: pytorch/manylinux2_28_aarch64-builder:cpu-aarch64
+            artifact-prefix: paddlecodec-wheel-linux-arm64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
       - name: Download wheel artifact
         uses: actions/download-artifact@v4
         with:
-          name: paddlecodec-wheel-linux-py${{ matrix.python-version }}
+          name: ${{ matrix.artifact-prefix }}-py${{ matrix.python-version }}
           path: dist/
+
+      - name: Download cached test video artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: paddlecodec-test-video
+          path: .github/test-assets/
 
       - name: Install FFmpeg via conda
         uses: conda-incubator/setup-miniconda@v3
@@ -167,7 +220,6 @@ jobs:
 
       - name: Delete src folder
         run: |
-          # Delete src/ to ensure we're testing the installed wheel, not source code
           rm -rf src/
           ls -la
 
@@ -177,18 +229,17 @@ jobs:
 
   publish-pypi:
     runs-on: ubuntu-latest
-    name: Publish to PyPI
+    name: Publish Paddle wheels to PyPI
     if: "startsWith(github.ref, 'refs/tags/')"
     needs:
       - test-paddlecodec-wheel
     permissions:
       id-token: write
-
     steps:
       - name: Retrieve release distributions
         uses: actions/download-artifact@v6
         with:
-          pattern: paddlecodec-wheel-linux-*
+          pattern: paddlecodec-wheel-linux*
           path: dist/
           merge-multiple: true
 
@@ -197,7 +248,7 @@ jobs:
 
   publish-release:
     runs-on: ubuntu-latest
-    name: Publish to GitHub
+    name: Publish Paddle wheels to GitHub
     if: "startsWith(github.ref, 'refs/tags/')"
     needs:
       - test-paddlecodec-wheel
@@ -206,7 +257,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v6
         with:
-          pattern: paddlecodec-wheel-linux-*
+          pattern: paddlecodec-wheel-linux*
           path: dist/
           merge-multiple: true
       - name: Get tag name

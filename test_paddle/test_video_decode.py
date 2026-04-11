@@ -2,6 +2,7 @@ import paddle
 paddle.enable_compat(scope={"torchcodec"})
 
 import pytest
+import subprocess
 from dataclasses import dataclass, fields
 from io import BytesIO
 from typing import Callable, Mapping, Optional, Union
@@ -9,6 +10,40 @@ from typing import Callable, Mapping, Optional, Union
 import os
 import httpx
 import numpy as np
+
+
+def ffmpeg_rgb_sum(video_path_or_url: str) -> int:
+    # Use the local FFmpeg build as the oracle because YUV->RGB conversion is
+    # architecture- and FFmpeg-build-dependent.
+    proc = subprocess.Popen(
+        [
+            "ffmpeg",
+            "-v",
+            "error",
+            "-vsync",
+            "0",
+            "-i",
+            video_path_or_url,
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert proc.stdout is not None
+    assert proc.stderr is not None
+
+    total = 0
+    while chunk := proc.stdout.read(16 * 1024 * 1024):
+        total += sum(chunk)
+
+    stderr = proc.stderr.read().decode("utf-8", "ignore")
+    if proc.wait() != 0:
+        raise RuntimeError(f"ffmpeg failed to decode video: {stderr}")
+    return total
 
 
 @dataclass
@@ -169,9 +204,12 @@ def load_video(
 
 
 def test_video_decode():
-    url = "https://paddlenlp.bj.bcebos.com/datasets/paddlemix/demo_video/example_video.mp4"
-    video, metadata = load_video(url, backend="torchcodec")
-    assert video.to(paddle.int64).sum().item() == 247759890390
+    video_path = os.getenv(
+        "PADDLECODEC_TEST_VIDEO",
+        "https://paddlenlp.bj.bcebos.com/datasets/paddlemix/demo_video/example_video.mp4",
+    )
+    video, metadata = load_video(video_path, backend="torchcodec")
+    assert video.to(paddle.int64).sum().item() == ffmpeg_rgb_sum(video_path)
     assert metadata.total_num_frames == 263
     assert metadata.fps == pytest.approx(29.99418249715141)
     assert metadata.width == 1920
