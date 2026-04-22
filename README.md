@@ -20,6 +20,14 @@
 > import torchcodec
 > # use torchcodec
 > ```
+>
+> **Version Compatibility**
+>
+> | `paddlecodec`       | `paddle`            | Python             |
+> | ------------------ | ------------------ | ------------------ |
+> | `main` / `nightly` | `main` / `nightly` | `>=3.10`, `<=3.13` |
+> | `0.2`              | `3.4`              | `>=3.10`, `<=3.13` |
+> | `0.1`              | `3.3`              | `>=3.9`, `<=3.13`  |
 
 The original README.md content is as follows:
 

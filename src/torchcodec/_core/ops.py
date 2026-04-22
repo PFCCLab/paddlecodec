@@ -71,10 +71,10 @@ def load_torchcodec_shared_libraries():
         f"""Could not load libtorchcodec. Likely causes:
           1. FFmpeg is not properly installed in your environment. We support
              versions 4, 5, 6, and 7 on all platforms, and 8 on Mac and Linux.
-          2. The PyTorch version ({torch.__version__}) is not compatible with
-             this version of TorchCodec. Refer to the version compatibility
+          2. The PaddlePaddle version ({torch.__version__}) is not compatible with
+             this version of PaddleCodec. Refer to the version compatibility
              table:
-             https://github.com/pytorch/torchcodec?tab=readme-ov-file#installing-torchcodec.
+             https://github.com/PFCCLab/paddlecodec?tab=readme-ov-file.
           3. Another runtime dependency; see exceptions below.
         The following exceptions were raised as we tried to load libtorchcodec:
         """
