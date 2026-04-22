@@ -8,12 +8,50 @@ find_package(pybind11 REQUIRED)
 #find_package(Torch REQUIRED)
 set(TORCH_CXX_FLAGS "")
 
+function(resolve_paddle_library out_var)
+    foreach(candidate IN LISTS ARGN)
+        if(EXISTS "${candidate}")
+            set(${out_var} "${candidate}" PARENT_SCOPE)
+            return()
+        endif()
+    endforeach()
+    message(FATAL_ERROR "Unable to locate Paddle library for ${out_var}. Tried: ${ARGN}")
+endfunction()
+
+if(APPLE)
+    # Paddle on macOS ships libpaddle as .so, while runtime deps are .dylib.
+    set(PADDLE_LIBPADDLE_CANDIDATES "${PADDLE_PATH}/base/libpaddle.so")
+    set(PADDLE_LIBCOMMON_CANDIDATES "${PADDLE_PATH}/libs/libcommon.dylib")
+    set(PADDLE_LIBPHI_CORE_CANDIDATES "${PADDLE_PATH}/libs/libphi_core.dylib")
+elseif(WIN32)
+    set(PADDLE_LIBPADDLE_CANDIDATES
+        "${PADDLE_PATH}/base/libpaddle.dll"
+        "${PADDLE_PATH}/base/libpaddle.lib"
+    )
+    set(PADDLE_LIBCOMMON_CANDIDATES
+        "${PADDLE_PATH}/libs/libcommon.dll"
+        "${PADDLE_PATH}/libs/common.dll"
+    )
+    set(PADDLE_LIBPHI_CORE_CANDIDATES
+        "${PADDLE_PATH}/libs/libphi_core.dll"
+        "${PADDLE_PATH}/libs/phi_core.dll"
+    )
+else()
+    set(PADDLE_LIBPADDLE_CANDIDATES "${PADDLE_PATH}/base/libpaddle.so")
+    set(PADDLE_LIBCOMMON_CANDIDATES "${PADDLE_PATH}/libs/libcommon.so")
+    set(PADDLE_LIBPHI_CORE_CANDIDATES "${PADDLE_PATH}/libs/libphi_core.so")
+endif()
+
+resolve_paddle_library(PADDLE_LIBPADDLE ${PADDLE_LIBPADDLE_CANDIDATES})
+resolve_paddle_library(PADDLE_LIBCOMMON ${PADDLE_LIBCOMMON_CANDIDATES})
+resolve_paddle_library(PADDLE_LIBPHI_CORE ${PADDLE_LIBPHI_CORE_CANDIDATES})
+
 set(
     TORCH_LIBRARIES
-    "${PADDLE_PATH}/base/libpaddle.so"
-    "${PADDLE_PATH}/libs/libcommon.so"
+    "${PADDLE_LIBPADDLE}"
+    "${PADDLE_LIBCOMMON}"
     # "${PADDLE_PATH}/libs/libphi.so"  # currently libphi.so is static linked, we need remove it when it's shared linked
-    "${PADDLE_PATH}/libs/libphi_core.so"
+    "${PADDLE_LIBPHI_CORE}"
 )
 set(
     TORCH_INSTALL_PREFIX
@@ -82,8 +120,23 @@ function(make_torchcodec_sublibrary
         ${library_name}
         PUBLIC
         ${library_dependencies}
-        "-Wl,--as-needed"
     )
+
+    if(UNIX AND NOT APPLE)
+        target_link_options(
+            ${library_name}
+            PUBLIC
+            "-Wl,--as-needed"
+        )
+    endif()
+
+    if(APPLE)
+        target_link_options(
+            ${library_name}
+            PUBLIC
+            "LINKER:-undefined,dynamic_lookup"
+        )
+    endif()
 
 endfunction()
 
